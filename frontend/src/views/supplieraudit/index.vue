@@ -33,6 +33,36 @@
       <button class="btn ghost" type="button" @click="resetFilters">重置条件</button>
     </form>
 
+    <section class="todo-panel">
+      <h3>变更审批待办（供应商审计工序）</h3>
+      <table v-if="changeTodos.length" class="data-table">
+        <thead>
+          <tr>
+            <th>变更编号</th>
+            <th>变更类别</th>
+            <th>变更内容</th>
+            <th>生效日期</th>
+            <th>审批进度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="todo in changeTodos" :key="todo.id">
+            <td>{{ todo.变更编号 }}</td>
+            <td>{{ todo.变更类别 }}</td>
+            <td>{{ todo.变更内容 }}</td>
+            <td>{{ todo.生效日期 }}</td>
+            <td>{{ todo.审批进度 }}</td>
+            <td class="row-actions">
+              <button class="link" type="button" @click="passTodo(todo.id)">通过本工序</button>
+              <button class="link" type="button" @click="returnTodo(todo.id)">退回</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="todo-empty">暂无流转到供应商审计工序的变更</p>
+    </section>
+
     <table class="data-table">
       <thead>
         <tr>
@@ -66,6 +96,7 @@
     <footer class="page-foot">
       <span>共 {{ total }} 条供应商审计记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
+      <span v-if="noticeMessage" class="notice-text">{{ noticeMessage }}</span>
     </footer>
   </section>
 </template>
@@ -74,24 +105,42 @@
 import { computed, onMounted, ref } from 'vue'
 
 import {
+  approveStage,
+  rejectChanges,
+  supplierTodos,
+  SUPPLIER_STAGE,
+  type SupplierTodo,
+} from '@/api/change-workflow'
+import {
   downloadEntries,
   listEntries,
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
 import type { EntryRow } from '@/data/types'
+import { useSessionStore } from '@/stores/session'
 
 const meta = moduleMeta('supplieraudit')
+const store = useSessionStore()
 const columns = ["审计编号", "供应商名称", "物料类别", "审计方式", "缺陷项数", "审计结论", "整改期限", "审计状态"]
 const actions = ["提交审计", "判定通过", "要求整改"]
 const statuses = ["待审计", "审计中", "已通过", "需整改"]
-const stats = [{"label": "待审计供应商", "value": 0}, {"label": "审计中供应商", "value": 0}, {"label": "需整改供应商数", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const noticeMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const changeTodos = ref<SupplierTodo[]>([])
+
+const stats = computed(() => [
+  { label: '待审计供应商', value: rows.value.filter((row) => String(row.status) === '待审计').length },
+  { label: '审计中供应商', value: rows.value.filter((row) => String(row.status) === '审计中').length },
+  { label: '需整改供应商数', value: rows.value.filter((row) => String(row.status) === '需整改').length },
+  { label: '变更审批待办', value: changeTodos.value.length },
+])
+
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
@@ -114,11 +163,37 @@ function openCreate() {
 
 function runAction(action: string, row: EntryRow) {
   errorMessage.value = ''
+  noticeMessage.value = ''
   const result = applyAction(meta.key, Number(row.id), action)
   if (!result.ok) {
     errorMessage.value = result.message
     return
   }
+  reload()
+}
+
+// 变更待办只审「供应商审计」这一节：在变更记录上推进一节，生效日期读的也是变更记录上那一份。
+function passTodo(id: number) {
+  errorMessage.value = ''
+  noticeMessage.value = ''
+  const result = approveStage(id, SUPPLIER_STAGE, store.operator)
+  if (!result.ok) {
+    errorMessage.value = result.message
+    return
+  }
+  noticeMessage.value = result.message
+  reload()
+}
+
+function returnTodo(id: number) {
+  errorMessage.value = ''
+  noticeMessage.value = ''
+  const [item] = rejectChanges([id], store.operator).items
+  if (item && !item.ok) {
+    errorMessage.value = item.message
+    return
+  }
+  noticeMessage.value = item ? item.message : '已退回'
   reload()
 }
 
@@ -128,6 +203,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    changeTodos.value = supplierTodos()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '供应商审计列表读取失败'
   }

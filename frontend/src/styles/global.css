@@ -35,3 +35,25 @@ body { margin: 0; background: #f6f8fb; color: #1f2937; }
 .error-text { color: #b42318; }
 .status-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
 .legend-item { background: #eef2f7; border-radius: 999px; padding: 2px 10px; }
+.batch-bar { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; }
+.batch-hint { color: var(--muted); font-size: 12px; }
+.batch-result { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+.batch-result h3 { margin: 0 0 8px; font-size: 14px; }
+.result-block { border-left: 3px solid #d97706; background: #fffbeb; padding: 6px 10px; margin: 6px 0; }
+.result-list { list-style: none; margin: 6px 0; padding: 0; }
+.result-list li.ok { color: #15803d; }
+.result-list li.fail { color: #b42318; }
+.dialog-mask { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.dialog { background: #fff; border-radius: 8px; padding: 16px 20px; width: 420px; display: flex; flex-direction: column; gap: 10px; }
+.dialog h3 { margin: 0; font-size: 15px; }
+.dialog-desc { margin: 0; color: var(--muted); font-size: 12px; }
+.dialog label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.dialog input, .dialog select, .dialog textarea { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font: inherit; }
+.dialog-foot { display: flex; justify-content: flex-end; gap: 8px; }
+.tag-warn { display: inline-block; background: #fef2f2; color: #b42318; border-radius: 999px; padding: 0 8px; font-size: 12px; margin-left: 6px; }
+.row-warn td { background: #fffbeb; }
+.todo-panel { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+.todo-panel h3 { margin: 0 0 8px; font-size: 14px; }
+.todo-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.notice-text { color: #15803d; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }

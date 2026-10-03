@@ -2,6 +2,8 @@ import { MODULE_BY_KEY } from '@/data/modules'
 import { allRows, listRows, resetRows, saveRows } from '@/data/local-store'
 import type { ActionResult, EntryRow, ModuleMeta, OverviewResult, PageResult } from '@/data/types'
 
+import { supplierTodoCount } from './change-workflow'
+
 // 会写进数据的「往回走」动作：命中就把这条记录标成异常态，看板上能一眼看出来。
 const NEGATIVE_ACTIONS = ['撤销', '作废', '拒绝', '驳回', '停用', '忽略', '下线', '回滚']
 
@@ -88,10 +90,12 @@ export function loadOverview(): OverviewResult {
   const rows = allRows()
   const modules = [...MODULE_BY_KEY.values()].map((meta) => {
     const entries = rows[meta.key] ?? []
+    // 变更审批走到「供应商审计」这一节时，待办落在供应商审计模块头上
+    const crossPending = meta.key === 'supplieraudit' ? supplierTodoCount() : 0
     return {
       name: meta.name,
       created: entries.length,
-      pending: entries.filter((row) => row.pending).length,
+      pending: entries.filter((row) => row.pending).length + crossPending,
       abnormal: entries.filter((row) => row.abnormal).length,
     }
   })
