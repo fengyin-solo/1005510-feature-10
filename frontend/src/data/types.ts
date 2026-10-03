@@ -5,7 +5,8 @@ export type EntryRow = {
   status: string
   pending: boolean
   abnormal: boolean
-  [field: string]: string | number | boolean
+  // 风险评估表、工序流转记录这类结构化附件也挂在行上（见 data/changecontrol.ts）。
+  [field: string]: string | number | boolean | object
 }
 
 export type ModuleMeta = {
@@ -30,6 +31,23 @@ export type PageResult = {
 export type ActionResult = {
   ok: boolean
   message: string
+}
+
+// 批量动作逐条落账：success 已推进，blocked 被规则挡回（含缺字段/越级/非法日期），skipped 命中幂等跳过。
+export type BatchItemStatus = 'success' | 'blocked' | 'skipped'
+
+export type BatchItemResult = {
+  id: number
+  label: string
+  status: BatchItemStatus
+  message: string
+}
+
+export type BatchResult = {
+  items: BatchItemResult[]
+  succeeded: number
+  blocked: number
+  skipped: number
 }
 
 export type OverviewResult = {

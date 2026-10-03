@@ -20,6 +20,13 @@ function readStorage(): Record<string, EntryRow[]> {
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, EntryRow[]>
+    // 一次性迁移：旧版变更控制带有「变更状态」占位字段，且不按工序会签。
+    // 命中旧结构时，变更控制与供应商审计两个模块回到新示例数据，其余模块保留用户改动。
+    const legacyChange = (parsed.changecontrol ?? []).some((row) => Object.prototype.hasOwnProperty.call(row, '变更状态'))
+    if (legacyChange) {
+      delete parsed.changecontrol
+      delete parsed.supplieraudit
+    }
     return { ...fallback, ...parsed }
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback))

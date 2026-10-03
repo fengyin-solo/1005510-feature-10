@@ -24,6 +24,25 @@
       </span>
     </p>
 
+    <!-- 变更控制联动：供应商类变更全部工序会签批准后，状态落到这里作为待审计待办 -->
+    <section v-if="todos.length" class="todo-panel">
+      <h3>变更联动待办（供应商变更，待审计 {{ todos.length }} 条）</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>审计编号</th><th>来源变更</th><th>供应商/变更内容</th><th>物料类别（变更类别）</th><th>状态</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="todo in todos" :key="String(todo.id)">
+            <td>{{ todo['审计编号'] }}</td>
+            <td>{{ todo['来源变更'] }}</td>
+            <td>{{ todo['供应商名称'] }}</td>
+            <td>{{ todo['物料类别'] }}</td>
+            <td><span class="status-pill pill-stage">{{ todo.status }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -78,6 +97,7 @@ import {
   listEntries,
   moduleMeta,
   runAction as applyAction,
+  supplierChangeTodos,
 } from '@/api/local-service'
 import type { EntryRow } from '@/data/types'
 
@@ -88,6 +108,7 @@ const statuses = ["待审计", "审计中", "已通过", "需整改"]
 const stats = [{"label": "待审计供应商", "value": 0}, {"label": "审计中供应商", "value": 0}, {"label": "需整改供应商数", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
+const todos = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
@@ -128,6 +149,7 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    todos.value = supplierChangeTodos()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '供应商审计列表读取失败'
   }
